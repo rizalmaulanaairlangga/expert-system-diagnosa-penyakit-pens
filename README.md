@@ -1,3 +1,5 @@
+# DATA UJI COBA (20 KASUS)
+
 ### 1
 
 Suhu tubuh: 38.2
