@@ -3,6 +3,7 @@ package ui;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -66,11 +67,17 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
-        // atur ukuran dan font komponen
+        // atur gaya komponen
         applyStyle();
 
+        // header di bagian atas
         add(createHeader(), BorderLayout.NORTH);
+
+        // isi utama di tengah
         add(createMainContent(), BorderLayout.CENTER);
+
+        // tombol aksi dipindah keluar dari scroll
+        add(createButtonsPanel(), BorderLayout.SOUTH);
     }
 
     // mengatur tampilan spinner dan checkbox
@@ -117,7 +124,7 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
-    // susun panel kiri dan kanan
+    // panel utama yang berisi input dan output
     private JComponent createMainContent() {
         JSplitPane split = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
@@ -147,8 +154,6 @@ public class MainFrame extends JFrame {
         container.add(createDiabetesPanel());
         container.add(Box.createVerticalStrut(10));
         container.add(createHypertensionPanel());
-        container.add(Box.createVerticalStrut(12));
-        container.add(createButtonsPanel());
 
         container.setPreferredSize(new Dimension(920, 1400));
 
@@ -232,7 +237,7 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
-    // tombol aksi yang tersedia
+    // tombol aksi ditempatkan di luar scroll
     private JPanel createButtonsPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
@@ -313,7 +318,7 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
-    // ambil data dari ui ke object patientinput
+    // ambil input dari ui ke object
     private PatientInput getInput() {
         PatientInput p = new PatientInput();
 
@@ -341,57 +346,115 @@ public class MainFrame extends JFrame {
 
         p.thirsty = cbThirsty.isSelected();
         p.frequentUrination = cbFrequentUrination.isSelected();
+        p.nightUrination = cbNightUrination.isSelected();
+        p.fatigue = cbFatigue.isSelected();
+        p.woundSlowHeal = cbWoundSlowHeal.isSelected();
+        p.recurrentInfection = cbRecurrentInfection.isSelected();
 
         p.headache = cbHeadache.isSelected();
+        p.throbbingBackHead = cbThrobbingBackHead.isSelected();
+        p.dizziness = cbDizziness.isSelected();
+        p.blurryVision = cbBlurryVision.isSelected();
+        p.nosebleed = cbNosebleed.isSelected();
+        p.fastHeartRate = cbFastHeartRate.isSelected();
 
         return p;
     }
 
     // diagnosa dengan aturan
     private void diagnoseRule() {
-        DiagnosisResult result = RuleBasedDiagnosis.diagnose(getInput());
-        output.setText(result.disease);
+        PatientInput input = getInput();
+        DiagnosisResult result = RuleBasedDiagnosis.diagnose(input);
+        output.setText(buildReport("DIAGNOSA BERBASIS ATURAN", input, result));
     }
 
     // diagnosa dengan bobot
     private void diagnoseWeight() {
-        DiagnosisResult result = WeightedDiagnosis.diagnose(getInput());
-        output.setText(result.disease);
+        PatientInput input = getInput();
+        DiagnosisResult result = WeightedDiagnosis.diagnose(input);
+        output.setText(buildReport("DIAGNOSA SISTEM BOBOT", input, result));
+    }
+
+    // format hasil diagnosa
+    private String buildReport(String title, PatientInput input, DiagnosisResult result) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(title).append("\n");
+        sb.append("============================================================\n");
+        sb.append(input.fullSummary()).append("\n");
+        sb.append("Hasil diagnosa:\n");
+        sb.append("- penyakit  : ").append(result.disease).append("\n");
+        sb.append("- kategori  : ").append(result.category).append("\n");
+        sb.append("- keyakinan : ").append(result.confidence).append("\n");
+        sb.append("- detail    : ").append(result.detail).append("\n");
+
+        if (result.scores != null && !result.scores.isEmpty()) {
+            sb.append("\nSkor tiap penyakit:\n");
+            for (Map.Entry<String, Double> e : result.scores.entrySet()) {
+                sb.append(String.format("- %-15s : %.2f%%%n", e.getKey(), e.getValue()));
+            }
+        }
+
+        return sb.toString();
+    }
+
+    // format persen
+    private String formatScores(Map<String, Double> scores) {
+        if (scores == null || scores.isEmpty()) {
+            return "-";
+        }
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Map.Entry<String, Double> e : scores.entrySet()) {
+            if (!first) sb.append(" | ");
+            sb.append(e.getKey()).append("=").append(String.format("%.1f%%", e.getValue()));
+            first = false;
+        }
+        return sb.toString();
     }
 
     // hapus isi form
     private void clearForm() {
         spTemp.setValue(36.5);
-        output.setText("");
+        spWater.setValue(0.0);
+        spUrineCount.setValue(0);
+        spBloodSugar.setValue(100);
+        spSys.setValue(120);
+        spDia.setValue(80);
+
+        for (JCheckBox cb : allChecks()) {
+            cb.setSelected(false);
+        }
+
+        output.setText("Form dibersihkan.\n");
     }
 
-    // daftar checkbox untuk styling
+    // kumpulan checkbox untuk styling
     private List<JCheckBox> allChecks() {
-        List<JCheckBox> checks = new ArrayList<>();
-        checks.add(cbChills);
-        checks.add(cbFeverSuddenHigh);
-        checks.add(cbFeverFluctuate);
-        checks.add(cbCoughDry);
-        checks.add(cbCoughPhlegm);
-        checks.add(cbRunnyNose);
-        checks.add(cbSoreThroat);
-        checks.add(cbJointPain);
-        checks.add(cbRash);
-        checks.add(cbTourniquetPos);
-        checks.add(cbNauseaVomiting);
-        checks.add(cbAppetiteDown);
-        checks.add(cbThirsty);
-        checks.add(cbFrequentUrination);
-        checks.add(cbNightUrination);
-        checks.add(cbFatigue);
-        checks.add(cbWoundSlowHeal);
-        checks.add(cbRecurrentInfection);
-        checks.add(cbHeadache);
-        checks.add(cbThrobbingBackHead);
-        checks.add(cbDizziness);
-        checks.add(cbBlurryVision);
-        checks.add(cbNosebleed);
-        checks.add(cbFastHeartRate);
-        return checks;
+        List<JCheckBox> list = new ArrayList<>();
+        list.add(cbChills);
+        list.add(cbFeverSuddenHigh);
+        list.add(cbFeverFluctuate);
+        list.add(cbCoughDry);
+        list.add(cbCoughPhlegm);
+        list.add(cbRunnyNose);
+        list.add(cbSoreThroat);
+        list.add(cbJointPain);
+        list.add(cbRash);
+        list.add(cbTourniquetPos);
+        list.add(cbNauseaVomiting);
+        list.add(cbAppetiteDown);
+        list.add(cbThirsty);
+        list.add(cbFrequentUrination);
+        list.add(cbNightUrination);
+        list.add(cbFatigue);
+        list.add(cbWoundSlowHeal);
+        list.add(cbRecurrentInfection);
+        list.add(cbHeadache);
+        list.add(cbThrobbingBackHead);
+        list.add(cbDizziness);
+        list.add(cbBlurryVision);
+        list.add(cbNosebleed);
+        list.add(cbFastHeartRate);
+        return list;
     }
 }
